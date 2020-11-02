@@ -1,0 +1,277 @@
+{% extends 'base.html.twig' %}
+{% block title %}
+    Les offres
+{% endblock %}
+
+{% block body %}
+    {% include 'header.html.twig' %}
+    {% if hotels %}
+        <div class="container mt-5">
+            <div class="row mt-5">
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Nom</th>
+                        <th scope="col">Adresse</th>
+                        <th scope="col">Nombre de chambres</th>
+                        <th scope="col">Telepone</th>
+                        <th scope="col">Reserve?</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for hotel in hotels %}
+
+                        <tr>
+                            <th scope="row">{{ hotel.id }}</th>
+                            <td>{{ hotel.nom }}</td>
+                            <td>{{ hotel.adresse }}</td>
+                            <td>{{ hotel.chambres.count }}</td>
+                            <td>{{ hotel.telephone }}</td>
+                            <td>
+                                {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+                                <button type="button" class="btn btn-outline-success" name="reserver"
+                                        data-hotel="{{ hotel.id }}" data-toggle="modal"
+                                        data-target="#reservationModal">
+                                    Reserver
+                                </button>
+                                {% else %}
+                                    <div class="alert alert-danger"  role="alert">
+                                        Vous avez besoin de se connecter avant de reserver
+                                    </div>
+                                    {% endif %}
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="container mt-5">
+            <div class="row mt-5">
+                <h3>Nous sommes désolé mais on a pas pu trouver des hotels qui corresponds à vos critéres.
+                </h3>
+            </div>
+        </div>
+    {% endif %}
+
+
+    <!-- Modal -->
+    <div class="modal fade reservation-modal " id="reservationModal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Reserver votre Voiture</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <h5>Avant de confirmer la reservation, veuillez verifier les informations</h5>
+                    <form method="post" class="tm-search-form pr-5 ml-2" id="formReserver"
+                          onchange="updatePrixReservation(this);">
+                        <div class="row">
+                            <h6 class="nom-hotel"></h6>
+                        </div>
+                        <div class="row">
+                            <div class="col-4">
+                                Date reservation
+                            </div>
+                            <div class="col-8">
+                                <input type="datetime-local" name="reservation" id="reservation">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-4">
+                                Date sortie
+                            </div>
+                            <div class="col-8">
+                                <input type="datetime-local" name="sortie" id="sortie">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6 col-md-12">
+                                <div class="col-6">Adultes</div>
+                                <div class="col-6"><input type="number" min="0" name="adultes" value="1" id="adultes">
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12">
+                                <div class="col-6">Enfants</div>
+                                <div class="col-6"><input type="number" min="0" name="enfants" value="0" id="enfants">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3 mb-3">
+                            <div class="col-4">
+                                Type de chambre
+                            </div>
+                            <div class="col-8">
+                                <select name="chambre" id="chambre">
+
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="alert alert-danger alert-date" id="alert-date" role="alert" hidden="true">
+                                La date de sortie doit etre <strong>aprés</strong> la date de reservation.
+                            </div>
+                            <div class="alert alert-danger alert-personne" id="alert-personne" role="alert" hidden>
+                                Il faut avoir au minimum une personne (adultes ou enfants) pour pouvoir reserver.
+                            </div>
+                            <div class="alert alert-info alert-prix col-12" role="alert">
+                                <div class="row">
+                                    <div class="col-6 col-md-6">
+                                        Prix Nuit: <h4 class="prix-nuit"></h4><h4> €</h4>
+                                    </div>
+                                    <div class="col-6 col-md-6">
+                                        Prix Total: <h4 class="prix-total"></h4><h4> €</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="reserver(this);" id="reserverBtn"
+                            name="reserverBtn">Reserver
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'footer.html.twig' %}
+{% endblock %}
+
+{% block javascripts %}
+
+    <script>
+        $('#chambre').change(function () {
+            var prix = $(this).find('option:selected').attr('data-prix');
+            $(".prix-nuit").text(prix);
+        });
+
+        function updatePrixReservation(e) {
+            let date_reservation = $("#reservation").val();
+            let date_sortie = $("#sortie").val();
+            let adultes = $("#adultes").val();
+            let enfants = $("#enfants").val();
+            let chambre = $("#chambre");
+            let good_date = false;
+            let good_personnes = false;
+            date_reservation = Date.parse(date_reservation);
+            date_sortie = Date.parse(date_sortie);
+            if (date_sortie < date_reservation) {
+                document.getElementById("alert-date").removeAttribute("hidden");
+                good_date = false;
+            } else {
+                document.getElementById("alert-date").setAttribute("hidden", "true");
+                good_date = true;
+            }
+            if (adultes < 1 && enfants < 1) {
+                document.getElementById("alert-personne").removeAttribute("hidden");
+                good_personnes = false;
+            } else {
+                document.getElementById("alert-personne").setAttribute("hidden", "true");
+                good_personnes = true;
+            }
+            if (good_personnes && good_date) {
+                document.getElementById("reserverBtn").disabled = false;
+                const diffTime = Math.abs(date_sortie - date_reservation);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                let prixNuit = chambre.find('option:selected').attr("data-prix");
+                let prixTot = diffDays * prixNuit;
+                $(".prix-total").text(prixTot);
+                $('#reserverBtn').prop('disabled', false);
+            } else {
+                $(".prix-total").text("");
+                $('#reserverBtn').prop('disabled', true);
+
+            }
+        }
+
+        $('#reservationModal').on('show.bs.modal', function (event) {
+            let button = $(event.relatedTarget);
+            let id = button.data("hotel");
+            $('#reserverBtn').prop('disabled', true);
+            getHotelsDetails(id).then(response => {
+                localStorage.clear();
+                let modal = $(this);
+                let nom = response["nom"];
+                let adresse = response["adresse"];
+                let ville = response["ville"];
+                let chambres = response["chambres"];
+                let i;
+                modal.find('.nom-hotel').text("Vous voulez reserver pour l'hotel "
+                    + nom + " à " + adresse + " " + ville);
+                let select = document.getElementById("chambre");
+                for (i = 0; i < chambres.length; i++) {
+                    let option = document.createElement("option");
+                    option.text = chambres[i].type;
+                    option.setAttribute("data-prix", chambres[i].prix);
+                    option.setAttribute("data-id", chambres[i].id);
+                    select.add(option);
+                }
+                var prix = $("#chambre").find('option:selected').attr('data-prix');
+                $(".prix-nuit").text(prix);
+                localStorage.setItem("idHotel", id);
+            });
+        });
+
+        function getHotelsDetails(id) {
+            let url = "{{ absolute_url(path("hotel_details", {"id": "id"})) }}";
+            url = url.replace("id", id);
+            return $.ajax({
+                url: url,
+                type: "get"
+            });
+        }
+
+
+        function reserver(e) {
+            let hotel_id = localStorage.getItem("idHotel");
+            let date_reservation = $("#reservation").val();
+            let date_sortie = $("#sortie").val();
+            let adultes = $("#adultes").val();
+            let enfants = $("#enfants").val();
+            let chambre = $("#chambre").val()
+            let reserver_url = "{{ absolute_url(path("reserver_hotel")) }}";
+
+            // Fire off the request to /form.php
+            request = $.ajax({
+                url: reserver_url,
+                type: "post",
+                data: {
+                    "hotel_id": hotel_id,
+                    "date_reservation": date_reservation,
+                    "date_sortie": date_sortie,
+                    "adultes": adultes,
+                    "enfants": enfants,
+                    "chambre": chambre
+                }
+            });
+
+            // Callback handler that will be called on success
+            request.done(function (response, textStatus, jqXHR) {
+                // Log a message to the console
+                toastr["success"]("Reservation faite", "votre reservation est faits, vous pouvez le voir dans votre espace client.")
+               $('#reservationModal').modal('hide')
+            });
+
+            // Callback handler that will be called on failure
+            request.fail(function (jqXHR, textStatus, errorThrown) {
+                // Log the error to the console
+                toastr["error"]("Erreur", "Y'a un probleme, veuille verifier les infos saisi, et essayer apres.");
+                console.error(
+                    "The following error occurred: " +
+                    textStatus, errorThrown
+                );
+            });
+
+        }
+    </script>
+{% endblock %}

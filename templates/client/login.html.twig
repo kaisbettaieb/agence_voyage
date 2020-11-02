@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+{% block title %}
+    Les offres
+{% endblock %}
+
+{% block body %}
+    {% include 'header.html.twig' %}
+<div class="container text-center">
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{error}}
+    </div>
+    {% endif %}
+    <form action="" method="post">
+        <div class="row">
+            <div class="col-3">
+                <h6>Email</h6>
+            </div>
+            <div class="col-9">
+                <input type="email" name="email" id="email">
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-3">
+                <h6>Password</h6>
+            </div>
+            <div class="col-9">
+                <input type="password" name="password" id="password">
+            </div>
+        </div>
+        <div class="row">
+            <div class="offset-3">
+                <a href="#">Mot de passe oublie?</a><br>
+                <a href="{{ path("ajout_client") }}">Nouveau utilisateur?</a>
+            </div>
+        </div>
+
+        <div class="row mt-4 mb-5">
+            <div class="offset-5">
+                <input type="submit" value="Login" class="btn btn-outline-primary">
+            </div>
+        </div>
+    </form>
+
+</div>
+    {% include 'footer.html.twig' %}
+{% endblock %}

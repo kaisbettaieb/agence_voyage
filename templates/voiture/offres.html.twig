@@ -1,0 +1,184 @@
+{% extends 'base.html.twig' %}
+{% block title %}
+    Les offres
+{% endblock %}
+
+{% block body %}
+    {% include 'header.html.twig' %}
+    {% if voitures %}
+        <div class="container mt-5">
+            <div class="row mt-5">
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Agence</th>
+                        <th scope="col">Model</th>
+                        <th scope="col">Prix/Journée</th>
+                        <th scope="col">Marque</th>
+                        <th scope="col">Reserve?</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for voiture in voitures %}
+
+                        <tr>
+                            <th scope="row">{{ voiture.id }}</th>
+                            <td>{{ voiture.agence.nom }}</td>
+                            <td>{{ voiture.model }}</td>
+                            <td>{{ voiture.prixhorstaxesjours }}</td>
+                            <td>{{ voiture.marque }}</td>
+                            <td>
+                                {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+                                    <button type="button" class="btn btn-outline-success" name="reserver"
+                                        data-voiture="{{ voiture.id }}" data-toggle="modal"
+                                        data-target="#reservationModal">
+                                    Reserver
+                                </button>
+                                {% else %}
+                                    <div class="alert alert-danger"  role="alert">
+                                        Vous avez besoin de se connecter avant de reserver
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="container mt-5">
+            <div class="row mt-5">
+                <h3>Nous sommes désolé mais on a pas pu trouver des locations voitures qui corresponds à vos critéres.
+                </h3>
+            </div>
+        </div>
+    {% endif %}
+
+
+    <!-- Modal -->
+    <div class="modal fade reservation-modal " id="reservationModal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Reserver votre Voiture</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <h5>Avant de confirmer la reservation, veuillez verifier les informations</h5>
+                    <form method="post" class="tm-search-form tm-section-pad-2" id="formReserver">
+                        <div class="form-row tm-search-form-row">
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="voiture_model">Voiture de model Mercedes-benz C180</h6>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h6>Date prise en charge</h6>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="datetime-local" name="prise" id="prise">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h6>Dade de restitution</h6>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="datetime-local" name="restitution" id="restitution">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="reserver(this);">Reserver</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'footer.html.twig' %}
+{% endblock %}
+
+{% block javascripts %}
+
+    <script>
+        $('#reservationModal').on('show.bs.modal', function (event) {
+            let button = $(event.relatedTarget);
+            let id = button.data("voiture");
+
+            getVoitureDetails(id).then(response => {
+                localStorage.clear();
+                let modal = $(this);
+                console.log(response);
+                let prix = response["prix_jours"];
+                let type = response["type_vehicule"];
+                let marque = response["marque"];
+                let km_inclus = response["km_inclus"];
+                let model = response["model"];
+                let agence = response["agence"];
+                modal.find('.voiture_model').text("Voiture de model " + marque + " " + model + "de l'agence " + agence);
+                localStorage.setItem("idVoiture", id);
+            });
+        });
+
+        function getVoitureDetails(id) {
+            let url = "{{ absolute_url(path("details_voiture", {"id": "id"})) }}";
+            url = url.replace("id", id);
+            return $.ajax({
+                url: url,
+                type: "get"
+            });
+        }
+
+        function reserver(e) {
+            let voiture_id = localStorage.getItem("idVoiture");
+            let jours = $("#jours").val();
+            let prise = $("#prise").val();
+            let restitution = $("#restitution").val();
+
+
+            let reserver_url = "{{ absolute_url(path("reserver_voiture")) }}";
+
+            // Fire off the request to /form.php
+            request = $.ajax({
+                url: reserver_url,
+                type: "post",
+                data: {
+                    "voiture_id": voiture_id,
+                    "date_prise": prise,
+                    "date_restitution": restitution
+                }
+            });
+
+            // Callback handler that will be called on success
+            request.done(function (response, textStatus, jqXHR) {
+                // Log a message to the console
+                toastr("success","votre reservation est faits, vous pouvez le voir dans votre espace client.");
+                $('#reservationModal').modal('hide')
+            });
+
+            // Callback handler that will be called on failure
+            request.fail(function (jqXHR, textStatus, errorThrown) {
+                // Log the error to the console
+                toastr("error", "Y'a un probleme, veuille verifier les infos saisi, et essayer apres.");
+                console.error(
+                    "The following error occurred: " +
+                    textStatus, errorThrown
+                );
+            });
+
+        }
+    </script>
+{% endblock %}

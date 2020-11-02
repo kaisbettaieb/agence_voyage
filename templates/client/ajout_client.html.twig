@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ajout Client{% endblock %}
+
+{% block body %}
+        {% include 'header.html.twig' %}
+        <div class="tm-search-form tm-section-pad-2">
+        {{ form(form) }}
+        </div>
+        {% include 'footer.html.twig' %}
+{% endblock %}

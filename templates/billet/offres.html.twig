@@ -1,0 +1,218 @@
+{% extends 'base.html.twig' %}
+{% block title %}
+    Les offres
+{% endblock %}
+
+{% block body %}
+    {% include 'header.html.twig' %}
+    {% if offres.count > 0 %}
+        <div class="container mt-5">
+            <div class="row mt-5">
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Start</th>
+                        <th scope="col">Destination</th>
+                        <th scope="col">Date Depart</th>
+                        <th scope="col">Date Arrive</th>
+                        <th scope="col">Prix</th>
+                        <th scope="col">Compagnie D'avion</th>
+                        <th scope="col">Reserve?</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for offre in offres %}
+                        <tr>
+                            <th scope="row">{{ offre.id }}</th>
+                            <td>{{ offre.depart }}</td>
+                            <td>{{ offre.arrivee }}</td>
+                            <td>{{ offre.datedepart |date("F jS ", "Europe/Paris") }}  {{ offre.heuredepart | number_format(2, ':', ',') }}</td>
+                            <td>{{ offre.datearrivee |date("F jS ", "Europe/Paris") }} {{ offre.heurearrivee |number_format(2, ':', ',') }}</td>
+                            <td>{{ offre.prix }} £</td>
+                            <td>{{ offre.compagnieavion.nom }}</td>
+                            <td>
+                                {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+                                <button type="button" class="btn btn-outline-success" name="reserver"
+                                        data-offre="{{ offre.id }}" data-toggle="modal" data-target="#reservationModal">
+                                    Reserver
+                                </button>
+                                {% else %}
+                                    <div class="alert alert-danger"  role="alert">
+                                        Vous avez besoin de se connecter avant de reserver
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="container mt-5">
+            <div class="row mt-5">
+                <h3>Nous sommes désolé mais on a pas pu trouver des voyages qui corresponds à vos critéres.
+                </h3>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Modal -->
+    <div class="modal fade reservation-modal " id="reservationModal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Reserver votre billet</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <h5>Avant de confirmer la reservation, veuillez verifier les informations</h5>
+                    <form method="post" class="tm-search-form tm-section-pad-2" id="formReserver">
+                        <div class="form-row tm-search-form-row">
+                            <div class="form-group tm-form-group tm-form-group-pad tm-form-group-1">
+                                <h5 class="modal-trajet"></h5>
+                            </div>
+                            <div class="form-group tm-form-group tm-form-group-1">
+                                <div class="form-group tm-form-group tm-form-group-pad tm-form-group-2">
+                                    <label for="inputAdult">Adult</label>
+                                    <input type="number" name="adult" class="form-control tm-select inputAdult"
+                                           id="inputAdult"
+                                           placeholder="nombre d'adultes" min="0" value="0"
+                                           onchange="calculatePrix(this)">
+
+                                </div>
+                                <div class="form-group tm-form-group tm-form-group-pad tm-form-group-2">
+
+                                    <label for="inputChildren">Children</label>
+                                    <input type="number" name="children" class="form-control tm-select inputChildren"
+                                           id="inputChildren"
+                                           placeholder="nombre d'enfants" min="0" value="0"
+                                           onchange="calculatePrix(this)">
+                                </div>
+                                <div class="row">
+                                    <h5>Le prix est: </h5><h5 class="prix"></h5><h5>£</h5>
+                                    <input type="number" value="0" hidden name="prixBillet" id="prixBillet">
+                                    <input type="number" hidden name="prixFinal" id="prixFinal">
+                                </div>
+                            </div>
+                        </div> <!-- form-row -->
+                        <div class="row">
+                            <h5 class="dateD"></h5>
+                        </div>
+                        <div class="row">
+                            <h5 class="dateA"></h5>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="reserver(this);">Reserver</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'footer.html.twig' %}
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        $('#reservationModal').on('show.bs.modal', function (event) {
+            let button = $(event.relatedTarget);
+            let id = button.data("offre");
+
+            getOffreDetails(id).then(response => {
+                localStorage.clear();
+                let modal = $(this);
+                let prix = response["prix"];
+                let dateA = response["date_arrivee"];
+                let heurA = response["heure_arrivee"];
+                let dateD = response["date_depart"];
+                let heurD = response["heure_depart"];
+                dateA = new Date(dateA.date);
+                dateD = new Date(dateD.date);
+                modal.find('.dateD').text("Depart: Le " + dateD.getDate() + " de " + dateD.getMonth() + ", " + dateD.getFullYear());
+                modal.find('.dateA').text("Arrive: Le " + dateA.getDate() + " de " + dateA.getMonth() + ", " + dateA.getFullYear());
+                localStorage.setItem("prixUnitaire", response["prix"]);
+                localStorage.setItem("idOffre", id);
+                //$('#prixBillet').val(response["prix"]);
+                let trajet = "Trajet: [" +
+                    response["depart"].toUpperCase() + "] => [" +
+                    response["arrivee"].toUpperCase() +
+                    "] avec " + response["compagnie"];
+                modal.find('.modal-trajet').text(trajet);
+            });
+        });
+
+        function getOffreDetails(id) {
+            let url = "{{ absolute_url(path("details_billet", {"id": "id"})) }}";
+            url = url.replace("id", id);
+            return $.ajax({
+                url: url,
+                type: "get"
+            });
+        }
+
+        function calculatePrix(e) {
+            let nbre_places = e.value;
+            if (nbre_places === 0) {
+                return;
+            }
+            let prixU = localStorage.getItem("prixUnitaire")
+            let prixFinalI = 0;
+            if (localStorage.getItem("prixFinal") !== null)
+                prixFinalI = localStorage.getItem("prixFinal");
+            let prixFinal = prixU * nbre_places;
+            $('.prix').text(prixFinal);
+            localStorage.setItem("prixFinal", prixFinal);
+        }
+
+
+        function reserver(e) {
+            let offre_id = localStorage.getItem("idOffre");
+            let children = $("#inputChildren").val();
+            let adults = $("#inputAdult").val();
+            let prix = $("#prixBillet").val();
+
+
+            let reserver_url = "{{ absolute_url(path("reserver_offre")) }}";
+
+            // Fire off the request to /form.php
+            request = $.ajax({
+                url: reserver_url,
+                type: "post",
+                data: {
+                    "offre_id": offre_id,
+                    "children": children,
+                    "adults": adults,
+                }
+            });
+
+            // Callback handler that will be called on success
+            request.done(function (response, textStatus, jqXHR) {
+                // Log a message to the console
+                alert("votre reservation est faits, vous pouvez le voir dans votre espace client.");
+                $('#reservationModal').modal('hide')
+                console.log(response);
+            });
+
+            // Callback handler that will be called on failure
+            request.fail(function (jqXHR, textStatus, errorThrown) {
+                // Log the error to the console
+                alert("Y'a un probleme, veuille verifier les infos saisi, et essayer apres.");
+                console.error(
+                    "The following error occurred: " +
+                    textStatus, errorThrown
+                );
+            });
+        }
+
+    </script>
+
+{% endblock %}
