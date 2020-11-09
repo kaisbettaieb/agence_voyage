@@ -20,11 +20,30 @@ class HotelController extends AbstractController
     public function index(Request $request): Response
     {
         $ville = $request->request->get("ville");
-
+        $nom_hotel = $request->request->get("hotel");
+        $check_in = $request->request->get("check-in");
+        $check_out = $request->request->get("check-out");
         $em = $this->getDoctrine()->getManager();
-        $hotels = $em->getRepository(Hotel::class)->findBy(
+        /*$hotels = $em->getRepository(Hotel::class)->findBy(
             array("ville" => $ville)
-        );
+        );*/
+
+        /*$hotels = $em->getRepository(Hotel::class)->findBy(
+            array(
+                '$or' => array(
+                    array('ville' => $ville),
+                    array('nom' => $nom_hotel),
+                ),
+            ));*/
+        $qb =  $em->getRepository(Hotel::class)->createQueryBuilder('cm');
+        $qb->select('cm')
+            ->where($qb->expr()->orX(
+                $qb->expr()->eq('cm.ville', ':ville'),
+                $qb->expr()->eq('cm.nom', ':nom')
+            ))
+            ->setParameter('ville', $ville)
+            ->setParameter('nom', $nom_hotel);
+        $hotels = $qb->getQuery()->getResult();//or more
         return $this->render('hotel/hotels.html.twig', [
             'hotels' => $hotels,
         ]);
