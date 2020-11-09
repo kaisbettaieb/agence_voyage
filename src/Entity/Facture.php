@@ -18,7 +18,7 @@ class Facture
     private $id;
 
     /**
-     * @ORM\Column(type="date")
+     * @ORM\Column(type="datetime")
      */
     private $date_facture;
 
@@ -31,6 +31,7 @@ class Facture
      * @ORM\ManyToOne(targetEntity=Reservation::class, inversedBy="factures")
      */
     private $reservation;
+
 
     public function getId(): ?int
     {
@@ -72,4 +73,6 @@ class Facture
 
         return $this;
     }
+
+
 }

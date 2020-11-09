@@ -1,0 +1,157 @@
+{% extends "base.html.twig" %}
+{% block title %}
+    Profile | Reservations
+{% endblock %}
+{% block body %}
+    {% include 'header.html.twig' %}
+    <div class="offset-4">
+        <div class="container">
+
+            {% if type == "avion" %}
+                {% for bi in reservation.billetavions %}<br>
+                    <div class="row">
+                        <h3>Details de reservation d'avion: </h3>
+                    </div>
+                    <div class="row">
+
+                        <h5>Date de reservation: {{ reservation.datereservation | date() }}<br>
+                            Nombre d'adultes: {{ reservation.nbradultes }}<br>
+                            Nombre d'enfants: {{ reservation.nbrbebes }}<br>
+                            Trajet: {{ bi.aeroportdepart }} => {{ bi.aeroportarrive }}<br>
+                            Date depart: {{ bi.datedepart | date() }}<br>
+                            Date arrivée: {{ bi.datearrivee | date() }}<br>
+                            Compagnie: {{ bi.compagnieavion.nom }} <br>
+                            <strong> Prix par billet : {{ bi.prixhorstaxes }}</strong><br>
+                            <strong>Prix
+                                Totale: {{ bi.prixhorstaxes * (reservation.nbradultes + reservation.nbrbebes ) }}
+                                €</strong>
+                        </h5>
+                    </div>
+                    <div class="row offset-2 mb-5">
+                        <button type="button" class="btn btn-outline-primary"
+                                data-toggle="modal" data-target="#exampleModal">Confirmer
+                        </button>
+                    </div>
+                {% endfor %}
+
+            {% elseif type == "chambre" %}
+                {% for chambre in reservation.locationChambres %}<br>
+                    <div class="row">
+                        <h3>Details de reservation d'une chambre d'hotel: </h3>
+                    </div>
+                    <div class="row">
+
+                        <h5>Date de reservation: {{ reservation.datereservation | date() }}<br>
+                            Nombre de nuits: {{ reservation.nbrnuits }}<br>
+                            Date d'entrée: {{ chambre.dateentree | date() }}<br>
+                            Date de sortie: {{ chambre.datesortie | date() }} <br>
+                            Type de chambre: {{ chambre.chambre.type }}<br>
+                            Nom de l'hotel: {{ chambre.chambre.hotel.nom }}<br>
+                            <strong>Prix la nuité: {{ chambre.chambre.prix }}</strong> <br>
+                            <strong> Prix totale : {{ chambre.chambre.prix * reservation.nbrnuits }} €</strong><br>
+                        </h5>
+                    </div>
+                    <div class="row offset-2 mb-5">
+                        <button type="button" class="btn btn-outline-primary"
+                                data-toggle="modal" data-target="#exampleModal">Confirmer
+                        </button>
+                    </div>
+                {% endfor %}
+
+            {% else %}
+
+                {% for location in reservation.locations %}<br>
+                    <div class="row">
+                        <h3>Details de reservation de location de voiture: </h3>
+                    </div>
+                    <div class="row">
+
+                        <h5>Date de reservtion: {{ reservation.datereservation | date() }}<br>
+                            {% set difference = date(location.daterestitution|date('Y/m/d')).diff(date(location.dateprisecharge|date('Y/m/d'))) %}
+                            {% set leftDays = difference.days %}
+                            Nombre de jours: {{ leftDays }}<br>
+                            Date de prise en charge: {{ location.dateprisecharge | date() }} <br>
+                            Date de restitution: {{ location.daterestitution | date() }} <br>
+                            Le nom d'agence: {{ location.agence.nom }}<br>
+                            Details de la voiture: <br>
+                            Immatricule :{{ location.voiture.numeroimmatriculation }}<br>
+                            Model: {{ location.voiture.model }} <br>
+                            Marque: {{ location.voiture.marque }}<br>
+                            <strong>Prix la journée: {{ location.voiture.prixhorstaxesjours }}</strong> <br>
+                            <strong> Prix totale : {{ leftDays * location.voiture.prixhorstaxesjours }} €</strong><br>
+                        </h5>
+                    </div>
+                    <div class="row offset-2 mb-5">
+                        <button type="button" class="btn btn-outline-primary"
+                                data-toggle="modal" data-target="#exampleModal">Confirmer
+                        </button>
+                    </div>
+                {% endfor %}
+
+            {% endif %}
+
+
+        </div>
+    </div>
+
+
+
+    <div class="modal fade mt-5 " id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content mt-5">
+                <div class="modal-header">
+                    <h5 class="modal-title">Details de facture</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Date de facturation: <input type="date" name="date_facturation" id="date_facturation"></p>
+                    <p>Mode de reglemenet: <select name="reglement" id="reglement">
+                            <option value="cheque">Cheque</option>
+                            <option value="carteBancaire">Carte Bancaire</option>
+                        </select></p>
+                    <div class="offset-4">
+                        <button type="button" class="btn btn-outline-info"
+                                onclick="reserverFacture({{ reservation.id }})">
+                            Facturer
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'footer.html.twig' %}
+{% endblock %}
+
+    {% block javascripts %}
+        <script>
+            function reserverFacture(id) {
+                let date_facture = $("#date_facturation").val();
+                let reglement = $("#reglement").val();
+                let url = "{{ absolute_url(path("facture_reserver")) }}";
+                request = $.ajax({
+                    url: url,
+                    type: "post",
+                    data: {
+                        "id": id,
+                        "date" : date_facture,
+                        "reglement": reglement
+                    }
+                });
+                request.done(function (response, textStatus, jqXHR) {
+
+                    toastr["success"]("Facture ajouté", "Votre facture à été bien enregistré.");
+                    setTimeout(function () {
+                        $('#exampleModal').modal('hide');
+                        window.location.href = window.location.href.split('#')[0];
+                    }, 600);
+                })
+            }
+
+        </script>
+    {% endblock %}

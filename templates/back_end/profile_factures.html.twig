@@ -1,0 +1,44 @@
+{% extends "base.html.twig" %}
+{% block title %}
+    Profile | Reservations
+{% endblock %}
+{% block body %}
+    {% include 'header.html.twig' %}
+
+    {% if factures %}
+<div class="container mt-5">
+    <div class="row mt-5">
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Date de facture</th>
+                <th scope="col">Mode de reglement</th>
+            </tr>
+            </thead>
+            <tbody>
+
+        {% for facture in factures %}
+        <tr>
+        <td> {{ facture.id }}</td>
+            <td>{{ facture.datefacture |date() }}</td>
+            <td>{{ facture.modereglement }}</td>
+        </tr>
+
+        {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+    {% else%}
+
+    <h5>Pas de factures pour le moment.</h5>
+    {% endif %}
+
+    {% include 'footer.html.twig' %}
+{% endblock %}
+
+    {% block javascripts %}
+
+    {% endblock %}

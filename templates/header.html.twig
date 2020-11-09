@@ -1,4 +1,4 @@
-<div class="tm-top-bar" id="tm-top-bar">
+<div class="tm-top-bar" id="">
     <div class="container">
         <div class="row">
             <nav class="navbar navbar-expand-lg narbar-light">
@@ -32,9 +32,8 @@
                                     Profile
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-right">
-                                    <a class="dropdown-item" href="#">Panier</a>
-                                    <a class="dropdown-item" href="#">Reservations</a>
-                                    <a class="dropdown-item" href="#">Parameters</a>
+                                    <a class="dropdown-item" href="{{ path("profile_reservation")}}">Reservations</a>
+                                    <a class="dropdown-item" href="{{ path("profile_factures") }}">Factures</a>
                                     <div class="dropdown-divider"></div>
                                     <a class="dropdown-item" href="{{ path("logout_client") }}">Déconnecter</a>
                                 </div>

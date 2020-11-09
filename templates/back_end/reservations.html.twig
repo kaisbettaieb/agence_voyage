@@ -1,0 +1,143 @@
+{% extends "base.html.twig" %}
+{% block title %}
+    Profile | Reservations
+{% endblock %}
+{% block body %}
+    {% include 'header.html.twig' %}
+    {% if reservationAvions %}
+        <div class="container mt-5">
+            <div class="row mt-5">
+                <h3>Reservations Billets Avions</h3>
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th scope="col">Date reservation</th>
+                        <th scope="col">Nombre d'adultes</th>
+                        <th scope="col">Nombre d'enfants</th>
+                        <th scope="col">Trajet</th>
+                        <th scope="col">Date depart</th>
+                        <th scope="col">Date arrivee</th>
+                        <th scope="col">Compagnie</th>
+                        <th scope="col">Prix</th>
+                        <th scope="col">Confirmer?</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for billet in reservationAvions %}
+                        {% for bi in billet.billetavions %}
+                            <tr>
+                                <td scope="row">{{ billet.datereservation | date() }}</td>
+                                <td>{{ billet.nbradultes }}</td>
+                                <td>{{ billet.nbrbebes }} </td>
+                                <td>{{ bi.aeroportdepart }} => {{ bi.aeroportarrive }}</td>
+                                <td>{{ bi.datedepart | date() }} </td>
+                                <td>{{ bi.datearrivee | date() }}</td>
+                                <td>{{ bi.compagnieavion.nom }} </td>
+                                <td>{{ bi.prixhorstaxes }} €</td>
+                                <td>
+                                    <a href="{{ path("reserver_facture", {id: billet.id, type: "avion"}) }}"><button type="button" class="btn btn-outline-success">Confirmer</button></a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if reservationChambres %}
+        <div class="container mt-5">
+            <div class="row mt-5">
+                <h3>Reservations Chambres</h3>
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th scope="col" >Date reservation</th>
+                        <th scope="col">Nombre de nuits</th>
+                        <th scope="col">Date d'entree</th>
+                        <th scope="col">Date de sortie</th>
+                        <th scope="col">Type de chambre</th>
+                        <th scope="col">Hotel</th>
+                        <th scope="col">Prix la nuit</th>
+                        <th scope="col">Prix totale</th>
+                        <th scope="col">Confirmer?</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for location in reservationChambres %}
+                        {% for chambre in location.locationChambres %}
+                            <tr>
+                                <td scope="row">{{ location.datereservation | date() }}</td>
+                                <td>{{ location.nbrnuits }}</td>
+                                <td>{{ chambre.dateentree | date() }} </td>
+                                <td>{{ chambre.datesortie | date() }} </td>
+                                <td>{{ chambre.chambre.type }} </td>
+                                <td>{{ chambre.chambre.hotel.nom }}</td>
+                                <td>{{ chambre.chambre.prix }} </td>
+                                <td>{{ chambre.chambre.prix * location.nbrnuits }} €</td>
+                                <td>
+                                    <a href="{{ path("reserver_facture", {id: location.id,type: "chambre"}) }}"><button type="button" class="btn btn-outline-success">Confirmer</button></a>                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if reservationLocation %}
+        <div class="container mt-5">
+            <div class="row mt-5">
+                <h3>Reservations Location</h3>
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th scope="col">Date reservation</th>
+                        <th scope="col">Nombre de jours</th>
+                        <th scope="col">Date de prise en charge</th>
+                        <th scope="col">Date de restitution</th>
+                        <th scope="col">Agence</th>
+                        <th scope="col">Voiture</th>
+                        <th scope="col">Prix la journée</th>
+                        <th scope="col">Prix Totale</th>
+                        <th scope="col">Confirmer?</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for l in reservationLocation %}
+                        {% for location in l.locations %}
+                            <tr>
+                                <td scope="row">{{ l.datereservation | date() }}</td>
+
+                                {% set difference = date(location.daterestitution|date('Y/m/d')).diff(date(location.dateprisecharge|date('Y/m/d'))) %}
+                                {% set leftDays = difference.days %}
+
+                                <td>{{ leftDays }}</td>
+                                <td>{{ location.dateprisecharge | date() }} </td>
+                                <td>{{ location.daterestitution | date() }} </td>
+                                <td>{{ location.agence.nom }} </td>
+                                <td>IM: {{ location.voiture.numeroimmatriculation }}, Model: {{ location.voiture.model }} de  {{ location.voiture.marque }}</td>
+                                <td>{{ location.voiture.prixhorstaxesjours }}</td>
+                                <td>prix journée * nombre de jours: {{ leftDays * location.voiture.prixhorstaxesjours  }}</td>
+                                <td>
+                                    <a href="{{ path("reserver_facture", {id: l.id, type: "location"}) }}"><button type="button" class="btn btn-outline-success">Confirmer</button></a>                                </td>
+                                </td>
+
+                            </tr>
+                            {% endfor %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    {% include 'footer.html.twig' %}
+{% endblock %}
+
+{% block javascripts %}
+
+{% endblock %}

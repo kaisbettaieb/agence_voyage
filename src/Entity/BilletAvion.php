@@ -38,12 +38,12 @@ class BilletAvion
     private $heure_arrive;
 
     /**
-     * @ORM\Column(type="date")
+     * @ORM\Column(type="datetime")
      */
     private $date_depart;
 
     /**
-     * @ORM\Column(type="date")
+     * @ORM\Column(type="datetime")
      */
     private $date_arrivee;
 
